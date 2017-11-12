@@ -1,0 +1,55 @@
+---
+- name: Website Deploy
+  hosts: webservers
+  remote_user: vishnu
+  become: yes
+  become_method: sudo
+  tags:
+    - deploy
+
+  vars:
+    site_http_port: 80
+    site_domain: ansiblehello.com
+
+  tasks:
+  - name: install apache
+    apt:
+      name: apache2
+      state: latest
+      update_cache: yes
+
+  - name: start apache
+    service:
+      name: apache2
+      state: started
+
+  - name: create virtual host file
+    template:
+      src: template_vhost.conf
+      dest: /etc/apache2/sites-available/{{ site_domain }}.conf
+
+  - name: create our Hello World website folder
+    file:
+      path: /var/www/{{ site_domain }}
+      state: directory
+
+  - name: copy our Hello World website
+    copy:
+      src: index.html
+      dest: /var/www/{{ site_domain }}
+
+  - name: disable apache default website
+    command: a2dissite 000-default.conf
+
+  - name: enable site {{ site_domain }}
+    command: a2ensite {{ site_domain }}
+    args:
+      creates: /etc/apache2/sites-enabled/{{ site_domain }}.conf
+    notify:
+      - restart apache
+
+  handlers:
+  - name: restart apache
+    service:
+      name: apache2
+      state: restarted

@@ -1,0 +1,29 @@
+- name: Website Un-Deploy
+  hosts: webservers
+  remote_user: vishnu
+  become: yes
+  become_method: sudo
+  tags:
+    - undeploy
+
+  vars:
+    site_http_port: 80
+    site_domain: ansiblehello.com
+
+  tasks:
+  - name: Deleting Hello World website folder
+    file:
+      path: /var/www/{{ site_domain }}
+      state: absent
+
+  - name: Deleting virtual host file
+    file:
+      path: /etc/apache2/sites-available/{{ site_domain }}.conf
+      state: absent
+
+  - name: uninstall apache
+    apt:
+      name: apache2
+      state: absent
+      update_cache: yes
+      purge: yes
